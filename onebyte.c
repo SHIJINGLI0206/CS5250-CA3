@@ -38,16 +38,48 @@ int onebyte_release(struct inode *inode, struct file *filep)
 	return 0; // always successful 
 } 
 
-ssize_t onebyte_read(struct file *filep, char *buf, size_t 
-count, loff_t *f_pos) 
+ssize_t onebyte_read(struct file *filep, char *buf, size_t count, loff_t *f_pos) 
 { 
-	/*please complete the function on your own*/ 
+	/*please complete the function on your own*/
+	// check if onebyte_data is null
+	if(!onebyte_data)
+	{
+		printk(KERN_WARNING "ONEBYTE is null.\n");
+		return -EINVAL;
+	} 
+	// check reading length
+	if(count != 1)
+	{
+		printk(KERN_WARNING "Only support one byte reading.\n");
+		return -EINVAL;
+	}
+	// copy data 
+	copy_to_user(buf, onebyte_data, count);
+	return 0;
+	
 } 
 
-ssize_t onebyte_write(struct file *filep, const char *buf, 
-size_t count, loff_t *f_pos) 
+ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t *f_pos) 
 { 
-	/*please complete the function on your own*/ 
+	/*please complete the function on your own*/
+	// check if user data is null
+	if(!buf)
+	{
+		printk(KERN_WARNING "buf is null.\n");
+		return -EINVAL;
+	} 
+	// check data length to be written
+	if(count <=0)
+	{
+		printk(KERN_ERR "The length of data to be written is invalid.\n");
+		return -EINVAL;
+	}
+	if(count > 1)
+	{
+		printk(KERN_ERR "The lenghth of data to be written is more than one byte.\n");
+	}
+	copy_from_user(onebyte_data,buf,1);
+	return 0;
 } 
 
 static int onebyte_init(void) 
