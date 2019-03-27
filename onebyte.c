@@ -72,11 +72,13 @@ ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t 
 		printk(KERN_ERR "The length of data to be written is invalid.\n");
 		return -EINVAL;
 	}
+	copy_from_user(onebyte_data,buf,1);
 	if(count > 1)
 	{
 		printk(KERN_ERR "The lenghth of data to be written is more than one byte.\n");
+		return -EFBIG;
 	}
-	copy_from_user(onebyte_data,buf,1);
+
 	return 0;
 } 
 
