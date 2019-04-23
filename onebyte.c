@@ -7,6 +7,7 @@
 #include <linux/fs.h> 
 #include <linux/proc_fs.h> 
 #include <asm/uaccess.h> 
+#include <linux/uaccess.h>
 
 #define MAJOR_NUMBER 61 
 
@@ -39,22 +40,29 @@ int onebyte_release(struct inode *inode, struct file *filep)
 ssize_t onebyte_read(struct file *filep, char *buf, size_t count, loff_t *f_pos) 
 { 
 	/*please complete the function on your own*/
+	int copy_err = 0;
 	// check if onebyte_data is null
 	if(!onebyte_data)
 	{
 		printk(KERN_WARNING "ONEBYTE is null.\n");
 		return -EINVAL;
 	} 
-	// check reading length
-	if(count != 1)
-	{
-		printk(KERN_WARNING "Only support one byte reading.\n");
-		return -EINVAL;
-	}
-	// copy data 
-	put_fs_byte(buf, onebyte_data);
-	return 0;
 	
+	// copy data 
+	copy_err = copy_to_user(buf, onebyte_data,1);
+	if(copy_err)
+	{
+		printk(KERN_ERR "Fail to copy data.\n");
+		return copy_err;
+	}
+	// set reading position of where to start reading the file	
+	if(*f_pos == 0)
+	{
+		*f_pos += 1;
+		return 1;
+	}
+	else
+		return 0;	
 } 
 
 ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t *f_pos) 
@@ -72,14 +80,20 @@ ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t 
 		printk(KERN_ERR "The length of data to be written is invalid.\n");
 		return -EINVAL;
 	}
-	onebyte_data[0]=get_fs_byte(&buf[0]);
+	copy_from_user(onebyte_data, buf, 1);
 	if(count > 1)
 	{
 		printk(KERN_ERR "The lenghth of data to be written is more than one byte.\n");
-		return -EFBIG;
+		return -ENOSPC;
 	}
-
-	return 0;
+	// set write position of where to start write the file
+	if(*f_pos == 0)
+	{
+		*f_pos += 1;
+		return 1;
+	}
+	else
+		return 0;
 } 
 
 static int onebyte_init(void) 
